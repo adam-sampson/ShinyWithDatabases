@@ -1,0 +1,317 @@
+---
+title: "Shiny with Databases"
+subtitle: "for more functional apps"
+author: "Robert Kahne<br>Adam Sampson"
+institute: "Splash Analytics"
+date: "2019-08-28 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: xaringan-themer.css
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+    seal: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+
+```{r xaringan-themer, include = FALSE}
+library(xaringanthemer)
+mono_light(
+  # base_color = "#1c5253",
+  # header_font_google = google_font("Josefin Sans"),
+  # text_font_google   = google_font("Montserrat", "300", "300i"),
+  # code_font_google   = google_font("Droid Mono")
+  extra_css = list(
+    ".large"   = list("font-size" = "150%"),
+    ".small" = list("font-size" = "90%"),
+    ".tiny" = list("font-size" = "50%"),
+    "div.my-header" = list(
+        "color" = "#FFFFFF",
+        "background-color" = "#23395b",
+        "position" = "fixed",
+        "top" = "0px",
+        "left" = "0px",
+        "height" = "70px",
+        "width" = "100%",
+        "text-align" = "left",
+        "padding-top" = "15px"
+    ),
+    "div.my-footer" = list(
+        "background-color" = "#23395b",
+        "position" = "absolute",
+        "bottom" = "0px",
+        "left" = "0px",
+        "height" = "40px",
+        "width" = "100%"
+    ),
+    '.inverseFooter .remark-slide-number' = list("color" = "#FFFFFF"), # White
+    '.myTitle' = list("color" = '#FFFFFF','padding-left' = "20px", "font-size" = "200%"),
+    '.titleLogo' = list(
+        'border-radius' = '25px',
+        'background' = '#E9EBEE',
+        'padding' = '0px',
+        'width' = '130px',
+        'height' = '130px',
+        'margin' = 'auto'
+    ),
+    '.titleLogo img' = list(
+      'padding' = '5px',
+      'margin' = '0px',
+      'width' = '120px',
+      'height' = '120px'
+    )
+  )
+)
+```
+
+class: center, middle, inverse, title-slide
+
+# Shiny with Databases
+
+<br>
+
+### Robert Kahne & Adam Sampson
+### Splash Analytics
+.titleLogo[
+![](//splashserver1/Employees/Adam/SplashU/Shiny with Databases/logo.png)
+]
+### 2019-08-28
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[]</div>
+
+### Reading flat files into R dataframes to store/filter/query your Shiny application data is a lot like using Excel to build a model to predict who will win the championship tournament. 
+### Sure, you can do it ... But there's a better way.
+<div class="my-footer"></div>
+---
+class: inverse, center, middle, inverseFooter
+
+# Why Splash Uses Databases With Shiny
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Overview]</div>
+.pull-left[
+.center[.large[Why]]
+<hr>
+
+- Speed
+  - Loading
+  - Indexes and Query Optimization
+  
+- Memory
+  - Large Files
+  - Multiple Users
+  
+- User Inputs
+  - Persistent
+  - Cross-session
+]
+
+.pull-right[
+.center[.large[How]]
+<hr>
+
+- Databases
+  - Database Options
+  - Database Optimization
+  - Data Validations
+  
+- dplyr
+  - Database Queries
+  - Compute
+  - Collect
+  - R Processes
+]
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Example App One - Big[ish] Data]</div>
+.large[
+For this app we will use the NOAA GSOD (~3GB)
+.tiny[https://www.kaggle.com/noaa/noaa-global-surface-summary-of-the-day]
+
+1. Populate Shiny drop-down to select a location
+2. Assign the weather data to R object
+3. When user selects location, generate plots for:
+    - Daily temperature
+    - Weekly min/mean/max temperature
+    - Monthly min/mean/max temperature
+    - Decomposed temperature
+]
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Using Databases for Speed]</div>
+.large[
+Databases can provide multiple speed advantages:
+
+- Initial app load-time is faster
+
+- Only load subsets of data from disk when/if they are neeeded
+
+- Index data to improve filtering, sorting, and grouped summarizations
+
+- Automated query optimization by SQL engine
+
+- Lots of work has been done to optimize databases ... don't reinvent the wheel
+]
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Using Databases for Speed]</div>
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Using Databases for Memory]</div>
+.large[
+To store data in memory or to store data on the hard drive?
+
+- R stores all data in memory (by default) for each instance
+
+- Lots of work has been done to optimize databases ... don't reinvent the wheel
+
+    - SQL has advanced caching to determine which data to store in memory and which to leave stored on disk
+
+    - SQL caches work for all users simultaneously
+]
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Using Databases for Memory]</div>
+.large[
+But what about [data.table / feather / vroom]!?
+
+- If you have a reason not to use a database then these might be helpful
+    - Shiny server is read-only
+    
+    - You have to store data over network with lots of lag and aren't allowed to run a SQL server (can only use SQLite)
+    
+    - Your app will never have too much data/users 
+
+- Otherwise, if you want to try to do better than decades of computer scientist, you do you ...
+]
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Using Databases for Memory]</div>
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Example App Two - User Inputs]</div>
+.large[
+For this app we will use the Louisville Yelp dataset
+.tiny[https://data.louisvilleky.gov/dataset/yelp-data]
+
+1. Load a list of restaurants with most recent comment
+2. Comment button to bring up modal showing all comments and form to add new comments
+3. Store new comment in DB when user clicks submit
+4. Poll DB to get most recent comment on main page
+]
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[User Inputs - Database Validation Rules]</div>
+
+.large[
+What happens if a user enters an invalid response?
+
+- In R you can check to make sure they never enter an invalid response
+
+- In SQL you can define requirements for inputs to prevent an incorrect entry from being uploaded
+
+- Don't forget to have R check for SQL injection attacks (enabled by default in `dbplyr`)
+]
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[User Inputs - Concurrent Users]</div>
+<br>
+.large[
+What happens if two users are both using an app to interactively enter information?
+
+- With flat files users may overwrite each other's edits
+    
+- With flat files might get an error if trying to write from two instances at once
+    
+- Databases are made for concurrent requests
+    
+- Design databases to show most current input, but keep all inputs for a trail of activity
+    
+- `reactivePoll` can automatically update data
+]
+
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[]</div>
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[]</div>
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[]</div>
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[]</div>
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[]</div>
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[]</div>
+
+<div class="my-footer"></div>
