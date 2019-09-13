@@ -1,10 +1,3 @@
----
-title: "README"
-author: "Adam Sampson"
-date: "9/10/2019"
-output: html_document
----
-
 ## App 1: Bigish Data
 
 This README details some of the information you will need to get the app running. Due to file sizes the data is not stored in the GIT repository with the code for the app. The data will need to be collected from the source and converted to appropriate files.
