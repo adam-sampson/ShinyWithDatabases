@@ -10,4 +10,4 @@ Xaringan is made to run online by default. If you want to knit the presentation 
 
 # App1 Installation Notes:
 
-In order to run App1 you will need to follow the installation instructions inside the README.RMD file in that folder. This is necessary because the data is too large to store in this repository.
+In order to run App1 you will need to follow the installation instructions inside the README.MD file in that folder. This is necessary because the data is too large to store in this repository.
