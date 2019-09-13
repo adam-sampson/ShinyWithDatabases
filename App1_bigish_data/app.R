@@ -29,6 +29,8 @@ library(shinycssloaders)
 library(DT)
 library(ggplot2)
 library(magrittr)
+library(sf)
+library(leaflet)
 # library(readr)
 # library(vroom)
 # library(data.table)
@@ -52,9 +54,19 @@ database_server <- function(input, output) {
   library(dbplyr)
   library(dplyr)
   
-  df <- mtcars
+  db <- dbConnect(RSQLite::SQLite(), "big_app.sqlite")
+  crime_tbl <- tbl(db,'louisvilleCrimeData')
+  weather_tbl <- tbl(db,'louisvilleWeatherData')
+  louisville_shapefile <- readRDS("jeff_co_zip_shp.rds")
+  louisville_shapefile <- sf::st_transform(louisville_shapefile,4326)
   
   output$mainTable <- renderDT(df,options = list())
+  
+  output$louisvilleMap <- renderLeaflet({
+    leaflet::leaflet(louisville_shapefile) %>% 
+      # addTiles() %>% 
+      addPolygons(fillOpacity = 0.5,color = 'black', weight = 1)
+  })
 }
 
 readcsv_server <- function(input, output) {
