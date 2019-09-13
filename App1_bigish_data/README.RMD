@@ -13,21 +13,19 @@ This README details some of the information you will need to get the app running
 
 ### Louisville Crime Data
 
-Get the Louisville crime data from https://data.louisvilleky.gov/dataset/crime-reports. From this page download all of the .csv files to the Louisville_crime_data directory. 
+Get the Louisville crime data from `https://data.louisvilleky.gov/dataset/crime-reports`. From this page download all of the .csv files to the Louisville_crime_data directory (2003 to 2019). 
 
-Once you have all the .csv files in the folder run the combine_data.R script to combine the data into a single .csv file. 
+Once you have all the .csv files in the folder run the combine_data.R script to combine the data into a single .csv file. After that the app files need the `Louisville_crime_data.csv` file and the database file (depending on which app file you run).
 
 ### NOAA Hourly Weather Data
 
-Get the NOAA Hourly Weather Data from https://www.ncei.noaa.gov/access/search/data-search/global-hourly?bbox=38.486,-85.998,38.024,-85.536&name=Louisville%252C%2520KY%252C%2520USA&sdate=2000-01-01&edate=2019-09-01. 
-
-From the link click `Select-All`, then `Configure and Add`, then `Add Order to Cart`. Go to your cart and submit your order. You will receive an email with a link to download your .csv file. Put your .csv file in the Louisville_hourly_weather_data folder. Change the file name to `Louisville_hourly_weather.csv`.
+NOAA hourly weather data will be downloaded by the database creation step. You will need the make sure the `Louisville_hourly_weather_data` folder exists in the proper location so that folder can store data appropriately. 
 
 ### SQLite database
 
-In order to create a database for this project you will need the most recent version of RSQLite. This is important as new releases of SQLite in 2019 have added substantial capabilities for windowing functions and for date functions. You will need to install RSQlite, then reboot your computer, then verify that you can load the library, then verify that the library version is new.
+In order to create a database for this project you will need the most recent version of RSQLite. You will need to install RSQlite, then reboot your computer, then verify that you can load the library, then verify that the library version is new.
 
-Next, we will need to run a script to add the raw data to the SQLite database file. 
+Next, we will need to run `createDatabase.R` to add the raw data to the SQLite database file. 
 
-NOTE: This database file should be run off of the local machine (not over a network drive) if at all possible. SQLite works best locally. If you need to run over a network it is recommended to set up a SQL server such as MySQL, SQL Server, or PostgreSQL.
+NOTE: This database file should be run off of the local machine (not over a network drive) if at all possible. SQLite works best locally. If you need to run over a network it is recommended to set up a SQL server such as MySQL, SQL Server, or PostgreSQL. In order to use a different database simply change the `dbConnect()` call to point to the appropriate database.
 
