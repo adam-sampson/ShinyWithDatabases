@@ -182,19 +182,14 @@ table.dataTable.hover tbody tr:hover, table.dataTable.display tbody tr:hover {
 .small {
   font-size: 90%;
 }
-.tiny {
-  font-size: 50%;
-}
 div.my-header {
-  color: #FFFFFF;
   background-color: #23395b;
   position: fixed;
   top: 0px;
   left: 0px;
-  height: 70px;
+  height: 60px;
   width: 100%;
   text-align: left;
-  padding-top: 15px;
 }
 div.my-footer {
   background-color: #23395b;
@@ -203,26 +198,4 @@ div.my-footer {
   left: 0px;
   height: 40px;
   width: 100%;
-}
-.inverseFooter .remark-slide-number {
-  color: #FFFFFF;
-}
-.myTitle {
-  color: #FFFFFF;
-  padding-left: 20px;
-  font-size: 200%;
-}
-.titleLogo {
-  border-radius: 25px;
-  background: #E9EBEE;
-  padding: 0px;
-  width: 130px;
-  height: 130px;
-  margin: auto;
-}
-.titleLogo img {
-  padding: 5px;
-  margin: 0px;
-  width: 120px;
-  height: 120px;
 }

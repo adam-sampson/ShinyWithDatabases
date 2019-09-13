@@ -114,6 +114,7 @@ class: class: left, middle, inverseFooter
 - User Inputs
   - Persistent
   - Cross-session
+  - Tracking User Activity
 ]
 
 .pull-right[
@@ -202,10 +203,9 @@ class: class: left, middle, inverseFooter
 But what about [data.table / feather / vroom]!?
 
 - If you have a reason not to use a database then these might be helpful
+
     - Shiny server is read-only
-    
     - You have to store data over network with lots of lag and aren't allowed to run a SQL server (can only use SQLite)
-    
     - Your app will never have too much data/users 
 
 - Otherwise, if you want to try to do better than decades of computer scientist, you do you ...
@@ -227,10 +227,11 @@ class: class: left, middle, inverseFooter
 For this app we will use the Louisville Yelp dataset
 .tiny[https://data.louisvilleky.gov/dataset/yelp-data]
 
-1. Load a list of restaurants with most recent comment
+1. Load a list of restaurants with most recent comment 
 2. Comment button to bring up modal showing all comments and form to add new comments
-3. Store new comment in DB when user clicks submit
-4. Poll DB to get most recent comment on main page
+3. Track which restauants users open up the modal for
+4. Store new comment in DB when user clicks submit
+5. Poll DB to get most recent comment on main page
 ]
 
 <div class="my-footer"></div>
