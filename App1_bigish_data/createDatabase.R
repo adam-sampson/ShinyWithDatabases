@@ -14,40 +14,12 @@ library(tidyverse)
 library(lubridate)
 
 # Create an SQLite database -----------------------------------------------
-big_app_db <- dbConnect(RSQLite::SQLite(), "./App1_bigish_data/big_app.sqlite")
+big_app_db <- dbConnect(RSQLite::SQLite(), "./big_app.sqlite")
 
 # Load data into R --------------------------------------------------------
-crime_data <- vroom("./App1_bigish_data/Louisville_crime_data/Louisville_crime_data.csv",
-                    .name_repair = snakecase::to_snake_case)
-# weather_data <- vroom("./App1_bigish_data/Louisville_hourly_weather_data/Louisville_hourly_weather.csv",
-#                       delim = ",",
-#                       .name_repair = snakecase::to_snake_case)
-# weather_data <- Filter(function(x)!all(is.na(x)), weather_data)
-# # The app to get the data sometimes includes duplicate data so fix that.
-# weather_data <- weather_data[, !duplicated(colnames(weather_data))]
-# weather_data <- weather_data %>%
-#   select(-(aa_1:aw_1),-eqd,-(ga_1:oe_1),-rh_1)
-# weather_data <- weather_data %>%
-#   rename(
-#     sea_level_pressure = slp,
-#     dew_point = dew,
-#     temp_f = tmp,
-#     
-#   )
-
-# Another Data comes in space delimited for first 2 lines and then comma delimited...have to fix.
-# weather_data <- vroom("./App1_bigish_data/Louisville_hourly_weather_data/LouisvilleWeatherData.txt",
-#                       delim = ",",
-#                       .name_repair = snakecase::to_snake_case,
-#                       skip = 2,
-#                       col_names = FALSE)
-# weather_columns <- readLines("./App1_bigish_data/Louisville_hourly_weather_data/LouisvilleWeatherData.txt",
-#                              skip = 1,
-#                              n = 2) %>%
-#   pluck(2) %>%
-#   str_extract_all("[^ ]+") %>%
-#   unlist()
-
+crime_data <- vroom("./Louisville_crime_data/Louisville_crime_data.csv",
+                    .name_repair = snakecase::to_snake_case,
+                    col_types = cols(.default = "c"))
 
 # Get weather data from ftp server ----------------------------------------
 # ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite/2000/
@@ -72,7 +44,7 @@ for(file in file_list){
   try(download.file(file,str_replace(file,"ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite/\\d{4}/","./App1_bigish_data/Louisville_hourly_weather_data/")))
 }
 
-file_list <- list.files("./App1_bigish_data/Louisville_hourly_weather_data/",
+file_list <- list.files("./Louisville_hourly_weather_data/",
                         ".gz",
                         full.names = TRUE)
 
@@ -112,9 +84,9 @@ weather_data <- weather_data %>%
     precip_six_hour_mm = ifelse(precip_six_hour_mm=="-9999",NA,precip_six_hour_mm/10)
   )
 
-write_csv(weather_data,"./App1_bigish_data/Louisville_hourly_weather_data/Bowman_Field_Weather.csv")
+write_csv(weather_data,"./Louisville_hourly_weather_data/Bowman_Field_Weather.csv")
 
-weather_data <- read_csv("./App1_bigish_data/Louisville_hourly_weather_data/Bowman_Field_Weather.csv")
+weather_data <- read_csv("./Louisville_hourly_weather_data/Bowman_Field_Weather.csv")
 weather_data <- weather_data %>%
   mutate(date_time = ymd_hms(paste(year,month,day,hour,"0","0",sep = "-"))) %>%
   select(date_time,everything())
@@ -130,6 +102,12 @@ crime_data <- crime_data %>%
     hour = hour(date_occured)
   ) %>%
   select(incident_number:date_occured,year,month,day,hour,everything())
+
+crime_data <- crime_data %>%
+  mutate(
+    date_reported = ymd_hms(date_reported),
+    date_occured = ymd_hms(date_occured)
+  )
 
 # big_app_db %>% dbExecute("DROP TABLE louisvilleCrimeData;")
 big_app_db %>%
