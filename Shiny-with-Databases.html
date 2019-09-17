@@ -59,6 +59,7 @@ class: class: left, middle, inverseFooter
 - User Inputs
   - Persistent
   - Cross-session
+  - Tracking User Activity
 ]
 
 .pull-right[
@@ -75,24 +76,6 @@ class: class: left, middle, inverseFooter
   - Compute
   - Collect
   - R Processes
-]
-&lt;div class="my-footer"&gt;&lt;/div&gt;
-
----
-class: class: left, middle, inverseFooter
-
-&lt;div class="my-header"&gt;.myTitle[Example App One - Big[ish] Data]&lt;/div&gt;
-.large[
-For this app we will use the NOAA GSOD (~3GB)
-.tiny[https://www.kaggle.com/noaa/noaa-global-surface-summary-of-the-day]
-
-1. Populate Shiny drop-down to select a location
-2. Assign the weather data to R object
-3. When user selects location, generate plots for:
-    - Daily temperature
-    - Weekly min/mean/max temperature
-    - Monthly min/mean/max temperature
-    - Decomposed temperature
 ]
 &lt;div class="my-footer"&gt;&lt;/div&gt;
 
@@ -159,29 +142,6 @@ But what about [data.table / feather / vroom]!?
 ---
 class: class: left, middle, inverseFooter
 
-&lt;div class="my-header"&gt;.myTitle[Using Databases for Memory]&lt;/div&gt;
-
-&lt;div class="my-footer"&gt;&lt;/div&gt;
-
----
-class: class: left, middle, inverseFooter
-
-&lt;div class="my-header"&gt;.myTitle[Example App Two - User Inputs]&lt;/div&gt;
-.large[
-For this app we will use the Louisville Yelp dataset
-.tiny[https://data.louisvilleky.gov/dataset/yelp-data]
-
-1. Load a list of restaurants with most recent comment
-2. Comment button to bring up modal showing all comments and form to add new comments
-3. Store new comment in DB when user clicks submit
-4. Poll DB to get most recent comment on main page
-]
-
-&lt;div class="my-footer"&gt;&lt;/div&gt;
-
----
-class: class: left, middle, inverseFooter
-
 &lt;div class="my-header"&gt;.myTitle[User Inputs - Database Validation Rules]&lt;/div&gt;
 
 .large[
@@ -216,6 +176,29 @@ What happens if two users are both using an app to interactively enter informati
 ]
 
 
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Example App - Big[ish] Data]&lt;/div&gt;
+.large[
+For this app we will use:
+
+The Louisville Crime Dataset
+
+.tiny[https://data.louisvilleky.gov/dataset/crime-reports]
+
+The Bowman Filed Weather ISD Lite Dataset
+
+.tiny[ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite/]
+
+1. Populate Shiny drop-down to select options
+2. Assign the data to R object
+3. When user selects a crime, generate plots for:
+    - County map
+    - Temperature to crime count lineplot
+]
 &lt;div class="my-footer"&gt;&lt;/div&gt;
 
 ---
