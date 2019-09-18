@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Shiny with Databases</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert Kahne Adam Sampson" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+
+
+
+
+
+class: center, middle, inverse, title-slide
+
+# Shiny with Databases
+
+&lt;br&gt;
+
+### Robert Kahne &amp; Adam Sampson
+### Splash Analytics
+.titleLogo[
+![](C:/temp/ShinyWithDatabases/logo.png)
+]
+### 2019-08-28
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[]&lt;/div&gt;
+
+### Reading flat files into R dataframes to store/filter/query your Shiny application data is a lot like using Excel to build a model to predict who will win the championship tournament. 
+### Sure, you can do it ... But there's a better way.
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+---
+class: inverse, center, middle, inverseFooter
+
+# Why Splash Uses Databases With Shiny
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Overview]&lt;/div&gt;
+.pull-left[
+.center[.large[Why]]
+&lt;hr&gt;
+
+- Speed
+  - Loading
+  - Indexes and Query Optimization
+  
+- Memory
+  - Large Files
+  - Multiple Users
+  
+- User Inputs
+  - Persistent
+  - Cross-session
+  - Tracking User Activity
+]
+
+.pull-right[
+.center[.large[How]]
+&lt;hr&gt;
+
+- Databases
+  - Database Options
+  - Database Optimization
+  - Data Validations
+  
+- dplyr
+  - Connecting to Database
+  - Database Queries
+  - Compute
+  - Collect
+  - Writing to Database
+]
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Using Databases for Speed]&lt;/div&gt;
+.large[
+Databases can provide multiple speed advantages:
+
+- Initial app load-time is faster
+
+- Only load subsets of data from disk when/if they are neeeded
+
+- Index data to improve filtering, sorting, and grouped summarizations
+
+- Automated query optimization by SQL engine
+
+- Lots of work has been done to optimize databases ... don't reinvent the wheel
+]
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Using Databases for Speed]&lt;/div&gt;
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Metric &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; db_time &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; readr_time &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; vroom_time &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Initial Startup &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.02 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 5.69 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 1.34 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Filter Crime Data &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.06 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.05 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.44 (0.08) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Plot Map &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.03 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.02 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.02 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Join Crime and Weather Data &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 2.31 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.16 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.27 (0.18) &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Plot Lineplot &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.02 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.02 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.02 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Total &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 2.44 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 5.94 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 2.09 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+.center[.small[Based on bigTiming.R in Example App folder]]
+
+.small[*Keep in mind, we are using sqlite for this demonstration.  Using a hosted database would make the db speed even faster.*]
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Using Databases for Memory]&lt;/div&gt;
+.large[
+To store data in memory or to store data on the hard drive?
+
+- R stores all data in memory (by default) for each instance
+
+- Lots of work has been done to optimize databases ... don't reinvent the wheel
+
+    - SQL has advanced caching to determine which data to store in memory and which to leave stored on disk
+
+    - SQL caches work for all users simultaneously
+]
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Using Databases for Memory]&lt;/div&gt;
+.large[
+But what about [data.table / feather / vroom]!?
+
+- If you have a reason not to use a database then these might be helpful
+
+    - Shiny server is read-only
+    - You have to store data over network with lots of lag and aren't allowed to run a SQL server (can only use SQLite)
+    - Your app will never have too much data/users 
+
+- Otherwise, if you want to try to do better than decades of computer scientist, you do you ...
+]
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Using Databases for Memory]&lt;/div&gt;
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Metric &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; db_mem &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; readr_mem &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; vroom_mem &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Initial Startup &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 134.01 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 542.32 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 104.62 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Filter Crime Data &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 116.36 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 516.24 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 110.99 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Plot Map &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 117.3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 518.82 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 112.92 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Join Crime and Weather Data &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 109.99 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 515.76 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 115.05 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Plot Lineplot &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 111.18 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 517.23 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 116.39 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+.center[.small[Based on bigTiming.R in Example App folder]]
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[User Inputs]&lt;/div&gt;
+&lt;br&gt;
+.large[
+Databases allow collection of data which can be stored for later use.
+
+- Collect inputs which can be stored across sessions.
+
+- Annotate data/plots/tables with information that can be shared across users.
+
+- User data can be analyzed for performance improvement or finding other insights.
+]
+
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[User Inputs - Database Validation Rules]&lt;/div&gt;
+
+.large[
+What happens if a user enters an invalid response?
+
+- In R you can check to make sure they never enter an invalid response
+
+- In SQL you can define requirements for inputs to prevent an incorrect entry from being uploaded
+
+- Don't forget to have R check for SQL injection attacks (enabled by default in `dbplyr`)
+]
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[User Inputs - Concurrent Users]&lt;/div&gt;
+&lt;br&gt;
+.large[
+What happens if two users are both using an app to interactively enter information?
+
+- With flat files users may overwrite each other's edits
+    
+- With flat files might get an error if trying to write from two instances at once
+    
+- Databases are made for concurrent requests
+    
+- Design databases to show most current input, but keep all inputs for a trail of activity
+    
+- `reactivePoll` can automatically update data
+]
+
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Example App - Big[ish] Data]&lt;/div&gt;
+.large[
+For this app we will use:
+
+[The Louisville Crime Dataset](https://data.louisvilleky.gov/dataset/crime-reports)
+
+[The Bowman Field Weather ISD Lite Dataset](ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite/)
+
+1. Populate Shiny drop-down to select options
+2. Assign the data to R object
+3. When user selects a crime, generate plots for:
+    - County map
+    - Temperature to crime count lineplot
+]
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Connecting to Tables in a Database]&lt;/div&gt;
+
+
+```r
+db &lt;- dbConnect(RSQLite::SQLite(), "big_app.sqlite")
+
+crime_tbl &lt;- tbl(db,'louisvilleCrimeData')
+weather_tbl &lt;- tbl(db,'louisvilleWeatherData')
+comment_tbl &lt;- tbl(db,'comments')
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Using Collect to Get Data from Database]&lt;/div&gt;
+
+
+
+```r
+uniqueCrimeList &lt;- crime_tbl %&gt;%
+    select(crime_type) %&gt;%
+    distinct() %&gt;%
+    collect() %&gt;%
+    pull(crime_type)
+
+output$dynamicControls &lt;- renderUI({
+      selectInput(
+        "crimeSelection",
+        "Select Crime[s]:",
+        # choices = c("All",uniqueCrimeList),
+        choices = uniqueCrimeList,
+        selected = c(NULL),
+        multiple = TRUE
+      ),
+      div(
+        style="text-align:center",
+        "Note: empty selection == 'All'"
+      )
+    )
+  })
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Using Compute to Only Compute Once]&lt;/div&gt;
+
+
+```r
+filteredCrimeData &lt;- eventReactive(list(selectedCrimeTypes(),
+                                        selectedStartDate(),
+                                        selectedEndDate()),{
+  # Sometimes dbplyr doesn't like variable()
+  crime_filter &lt;- selectedCrimeTypes() 
+  start_date &lt;- date_to_sqlite_numeric(selectedStartDate())
+  end_date &lt;- date_to_sqlite_numeric(selectedEndDate())
+  
+  # Iff a crime filter is required prepare it.
+  if(crime_filter[[1]] != "All"){
+    out &lt;- crime_tbl %&gt;% filter(crime_type %in% crime_filter)
+  } else {out &lt;- crime_tbl # No filter needed if "All"}
+  
+  # Finish preparing filters and then compute
+  out &lt;- out %&gt;%
+    select(date_occured,year,month,day,hour,crime_type,zip_code) %&gt;%
+    filter(zip_code %in% zip_filter) %&gt;%
+    filter(date_occured &gt;= start_date) %&gt;%
+    filter(date_occured &lt;= end_date) %&gt;%
+    compute()
+  return(out)
+})
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Joining Data Between Tables]&lt;/div&gt;
+
+
+```r
+crimeDataWithTemp &lt;- eventReactive(filteredCrimeData(),{
+  out &lt;- filteredCrimeData() %&gt;%
+    left_join(
+      weather_tbl %&gt;%
+        select(year,month,day,hour,air_temp_c),
+      by = c("year" = "year",
+             "month" = "month",
+             "day" = "day",
+             "hour" = "hour")
+    )
+  return(out)
+})
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Joining Small Local to Large Remote]&lt;/div&gt;
+
+
+```r
+localSmall &lt;- tibble(crime = c("DUI",
+                              "DRUGS/ALCOHOL VIOLATIONS",
+                              "DISTURBING THE PEACE"))
+
+myJoin &lt;- filteredCrimeData() %&gt;%
+  inner_join(localSmall,
+    by = c("crime_type" = "crime"),
+    copy = TRUE
+  )
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Joining Small Remote to Large Local]&lt;/div&gt;
+
+
+```r
+output$louisvilleMap &lt;- renderLeaflet({
+    shapesToPlot &lt;- louisville_shapefile %&gt;%
+      left_join(
+        filteredCrimeData() %&gt;%
+          select(zip_code) %&gt;%
+          group_by(zip_code) %&gt;%
+          summarise(crimes = n()) %&gt;%
+          collect(),
+        by = c("ZCTA5CE10" = "zip_code")
+      )
+    pal &lt;- colorNumeric("OrRd",
+                        domain = shapesToPlot$crimes,
+                        reverse = FALSE)
+    leaflet::leaflet(shapesToPlot) %&gt;% 
+      # addTiles() %&gt;% 
+      addProviderTiles(providers$CartoDB.Positron) %&gt;%
+      addPolygons(fillOpacity = 0.75,
+                  color = ~pal(crimes), 
+                  weight = 1)
+  })
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Uploading New Data to Database]&lt;/div&gt;
+
+
+```r
+check_comment &lt;- validateComment(input$commentCrimeType,
+                                 input$commentUserName,
+                                 input$commentText,
+                                 input$readyToSubmit)
+if(check_comment){
+  toSave &lt;- tibble(
+        datetime = Sys.time(),
+        CrimeType = input$commentCrimeType,
+        UserName = input$commentUserName,
+        comment = input$commentText
+      )
+      dbWriteTable(db,'comments',toSave,append = TRUE)
+      showModal(
+        modalDialog(
+          title = "Comment Uploaded",
+          "Your comment has been uploaded. Thanks!",
+          easyClose = TRUE
+        )
+      )
+}
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Polling for New Data]&lt;/div&gt;
+
+
+```r
+comment_data &lt;- reactivePoll(
+    5000, # Check every 5 seconds
+    session,
+    checkFunc = function(){
+      # if this tally value changes
+      comment_tbl %&gt;% tally() %&gt;% pull()
+    },
+    valueFunc = function(){
+      # Do this if it changed
+      comment_tbl %&gt;% collect()
+    }
+  )
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Fin]&lt;/div&gt;
+
+.center[.large[Questions???]]
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+
+---
+class: class: left, middle, inverseFooter
+
+&lt;div class="my-header"&gt;.myTitle[Additional SQLite Help]&lt;/div&gt;
+
+
+```r
+sqlite_numeric_to_date &lt;- function(number.in) {
+    as_datetime(as.numeric(number.in),
+               origin = "1970-01-01",
+               tz = "GMT") #SQLite defaults to UCT/GMT
+  }
+  
+date_to_sqlite_numeric &lt;- function(date.in) {
+    as.numeric(date.in)
+  }
+```
+
+&lt;div class="my-footer"&gt;&lt;/div&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

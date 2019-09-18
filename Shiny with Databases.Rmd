@@ -78,7 +78,7 @@ class: center, middle, inverse, title-slide
 ### Robert Kahne & Adam Sampson
 ### Splash Analytics
 .titleLogo[
-![](//splashserver1/Employees/Adam/SplashU/Shiny with Databases/logo.png)
+![](C:/temp/ShinyWithDatabases/logo.png)
 ]
 ### 2019-08-28
 
@@ -170,6 +170,8 @@ class: class: left, middle, inverseFooter
 
 .center[.small[Based on bigTiming.R in Example App folder]]
 
+.small[*Keep in mind, we are using sqlite for this demonstration.  Using a hosted database would make the db speed even faster.*]
+
 <div class="my-footer"></div>
 
 ---
@@ -227,6 +229,24 @@ class: class: left, middle, inverseFooter
 ---
 class: class: left, middle, inverseFooter
 
+<div class="my-header">.myTitle[User Inputs]</div>
+<br>
+.large[
+Databases allow collection of data which can be stored for later use.
+
+- Collect inputs which can be stored across sessions.
+
+- Annotate data/plots/tables with information that can be shared across users.
+
+- User data can be analyzed for performance improvement or finding other insights.
+]
+
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
 <div class="my-header">.myTitle[User Inputs - Database Validation Rules]</div>
 
 .large[
@@ -270,13 +290,9 @@ class: class: left, middle, inverseFooter
 .large[
 For this app we will use:
 
-The Louisville Crime Dataset
+[The Louisville Crime Dataset](https://data.louisvilleky.gov/dataset/crime-reports)
 
-.tiny[https://data.louisvilleky.gov/dataset/crime-reports]
-
-The Bowman Filed Weather ISD Lite Dataset
-
-.tiny[ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite/]
+[The Bowman Field Weather ISD Lite Dataset](ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite/)
 
 1. Populate Shiny drop-down to select options
 2. Assign the data to R object
@@ -291,7 +307,7 @@ class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Connecting to Tables in a Database]</div>
 
-```{}
+```{r, eval=FALSE}
 db <- dbConnect(RSQLite::SQLite(), "big_app.sqlite")
 
 crime_tbl <- tbl(db,'louisvilleCrimeData')
@@ -307,7 +323,7 @@ class: class: left, middle, inverseFooter
 <div class="my-header">.myTitle[Using Collect to Get Data from Database]</div>
 
 
-```{}
+```{r, eval=FALSE}
 uniqueCrimeList <- crime_tbl %>%
     select(crime_type) %>%
     distinct() %>%
@@ -338,7 +354,7 @@ class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Using Compute to Only Compute Once]</div>
 
-```{}
+```{r, eval=FALSE}
 filteredCrimeData <- eventReactive(list(selectedCrimeTypes(),
                                         selectedStartDate(),
                                         selectedEndDate()),{
@@ -370,7 +386,7 @@ class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Joining Data Between Tables]</div>
 
-```{}
+```{r, eval=FALSE}
 crimeDataWithTemp <- eventReactive(filteredCrimeData(),{
   out <- filteredCrimeData() %>%
     left_join(
@@ -392,7 +408,7 @@ class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Joining Small Local to Large Remote]</div>
 
-```{}
+```{r, eval=FALSE}
 localSmall <- tibble(crime = c("DUI",
                               "DRUGS/ALCOHOL VIOLATIONS",
                               "DISTURBING THE PEACE"))
@@ -411,7 +427,7 @@ class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Joining Small Remote to Large Local]</div>
 
-```{}
+```{r, eval=FALSE}
 output$louisvilleMap <- renderLeaflet({
     shapesToPlot <- louisville_shapefile %>%
       left_join(
@@ -441,7 +457,7 @@ class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Uploading New Data to Database]</div>
 
-```{}
+```{r, eval=FALSE}
 check_comment <- validateComment(input$commentCrimeType,
                                  input$commentUserName,
                                  input$commentText,
@@ -471,7 +487,7 @@ class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Polling for New Data]</div>
 
-```{}
+```{r, eval=FALSE}
 comment_data <- reactivePoll(
     5000, # Check every 5 seconds
     session,
@@ -491,13 +507,6 @@ comment_data <- reactivePoll(
 ---
 class: class: left, middle, inverseFooter
 
-<div class="my-header">.myTitle[]</div>
-
-<div class="my-footer"></div>
-
----
-class: class: left, middle, inverseFooter
-
 <div class="my-header">.myTitle[Fin]</div>
 
 .center[.large[Questions???]]
@@ -509,7 +518,7 @@ class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Additional SQLite Help]</div>
 
-```{}
+```{r, eval=FALSE}
 sqlite_numeric_to_date <- function(number.in) {
     as_datetime(as.numeric(number.in),
                origin = "1970-01-01",
@@ -523,16 +532,3 @@ date_to_sqlite_numeric <- function(date.in) {
 
 <div class="my-footer"></div>
 
----
-class: class: left, middle, inverseFooter
-
-<div class="my-header">.myTitle[]</div>
-
-<div class="my-footer"></div>
-
----
-class: class: left, middle, inverseFooter
-
-<div class="my-header">.myTitle[]</div>
-
-<div class="my-footer"></div>
