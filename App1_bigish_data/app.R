@@ -283,10 +283,10 @@ database_server <- function(input, output, session) {
   
 
 # Perform Comment Charting ------------------------------------------------
-  n_comments <- reactive({
-    if(length(comment_data()) == 0){ return(nrow(comment_tbl)) }
-    return(nrow(comment_data))
-  })
+  # n_comments <- reactive({
+  #   if(length(comment_data()) == 0){ return(nrow(comment_tbl)) }
+  #   return(nrow(comment_data))
+  # })
   
   comment_data <- reactivePoll(
     5000,

@@ -41,7 +41,7 @@ file_list <- c(file_list,
 )
 
 for(file in file_list){
-  try(download.file(file,str_replace(file,"ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite/\\d{4}/","./App1_bigish_data/Louisville_hourly_weather_data/")))
+  try(download.file(file,str_replace(file,"ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-lite/\\d{4}/","./Louisville_hourly_weather_data/")))
 }
 
 file_list <- list.files("./Louisville_hourly_weather_data/",
@@ -138,9 +138,19 @@ big_app_db %>%
 big_app_db %>%
   dbExecute("CREATE INDEX date_time_index ON louisvilleWeatherData(date_time);")
 
+comments <- tibble(
+  datetime = NA,
+  CrimeType = NA,
+  UserName = NA,
+  comment = NA
+)
+big_app_db %>%
+  dbWriteTable('comments',comments)
+
 # Verify data is uploaded -------------------------------------------------
 tbl(big_app_db,'louisvilleCrimeData')
 tbl(big_app_db,'louisvilleWeatherData')
+tbl(big_app_db,'comments')
 
 # Close database connections ----------------------------------------------
 dbDisconnect(big_app_db)

@@ -127,10 +127,11 @@ class: class: left, middle, inverseFooter
   - Data Validations
   
 - dplyr
+  - Connecting to Database
   - Database Queries
   - Compute
   - Collect
-  - R Processes
+  - Writing to Database
 ]
 <div class="my-footer"></div>
 
@@ -157,6 +158,17 @@ Databases can provide multiple speed advantages:
 class: class: left, middle, inverseFooter
 
 <div class="my-header">.myTitle[Using Databases for Speed]</div>
+
+```{r echo=FALSE}
+  knitr::kable(data.frame(
+    Metric = c("Initial Startup","Filter Crime Data","Plot Map","Join Crime and Weather Data","Plot Lineplot","Total"),
+    `db_time` = c("0.02","0.06","0.03","2.31","0.02","2.44"),
+    `readr_time` = c("5.69","0.05","0.02","0.16","0.02","5.94"),
+    `vroom_time` = c("1.34","0.44 (0.08)","0.02","0.27 (0.18)","0.02","2.09")
+  ), format = "html",full_width = T)
+```
+
+.center[.small[Based on bigTiming.R in Example App folder]]
 
 <div class="my-footer"></div>
 
@@ -192,6 +204,24 @@ But what about [data.table / feather / vroom]!?
 
 - Otherwise, if you want to try to do better than decades of computer scientist, you do you ...
 ]
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Using Databases for Memory]</div>
+
+```{r echo=FALSE}
+  knitr::kable(data.frame(
+    Metric = c("Initial Startup","Filter Crime Data","Plot Map","Join Crime and Weather Data","Plot Lineplot"),
+    `db_mem` = c("134.01","116.36","117.3","109.99","111.18"),
+    `readr_mem` = c("542.32","516.24","518.82","515.76","517.23"),
+    `vroom_mem` = c("104.62","110.99","112.92","115.05","116.39")
+  ), format = "html",full_width = T)
+```
+
+.center[.small[Based on bigTiming.R in Example App folder]]
+
 <div class="my-footer"></div>
 
 ---
@@ -259,7 +289,202 @@ The Bowman Filed Weather ISD Lite Dataset
 ---
 class: class: left, middle, inverseFooter
 
-<div class="my-header">.myTitle[]</div>
+<div class="my-header">.myTitle[Connecting to Tables in a Database]</div>
+
+```{}
+db <- dbConnect(RSQLite::SQLite(), "big_app.sqlite")
+
+crime_tbl <- tbl(db,'louisvilleCrimeData')
+weather_tbl <- tbl(db,'louisvilleWeatherData')
+comment_tbl <- tbl(db,'comments')
+```
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Using Collect to Get Data from Database]</div>
+
+
+```{}
+uniqueCrimeList <- crime_tbl %>%
+    select(crime_type) %>%
+    distinct() %>%
+    collect() %>%
+    pull(crime_type)
+
+output$dynamicControls <- renderUI({
+      selectInput(
+        "crimeSelection",
+        "Select Crime[s]:",
+        # choices = c("All",uniqueCrimeList),
+        choices = uniqueCrimeList,
+        selected = c(NULL),
+        multiple = TRUE
+      ),
+      div(
+        style="text-align:center",
+        "Note: empty selection == 'All'"
+      )
+    )
+  })
+```
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Using Compute to Only Compute Once]</div>
+
+```{}
+filteredCrimeData <- eventReactive(list(selectedCrimeTypes(),
+                                        selectedStartDate(),
+                                        selectedEndDate()),{
+  # Sometimes dbplyr doesn't like variable()
+  crime_filter <- selectedCrimeTypes() 
+  start_date <- date_to_sqlite_numeric(selectedStartDate())
+  end_date <- date_to_sqlite_numeric(selectedEndDate())
+  
+  # Iff a crime filter is required prepare it.
+  if(crime_filter[[1]] != "All"){
+    out <- crime_tbl %>% filter(crime_type %in% crime_filter)
+  } else {out <- crime_tbl # No filter needed if "All"}
+  
+  # Finish preparing filters and then compute
+  out <- out %>%
+    select(date_occured,year,month,day,hour,crime_type,zip_code) %>%
+    filter(zip_code %in% zip_filter) %>%
+    filter(date_occured >= start_date) %>%
+    filter(date_occured <= end_date) %>%
+    compute()
+  return(out)
+})
+```
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Joining Data Between Tables]</div>
+
+```{}
+crimeDataWithTemp <- eventReactive(filteredCrimeData(),{
+  out <- filteredCrimeData() %>%
+    left_join(
+      weather_tbl %>%
+        select(year,month,day,hour,air_temp_c),
+      by = c("year" = "year",
+             "month" = "month",
+             "day" = "day",
+             "hour" = "hour")
+    )
+  return(out)
+})
+```
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Joining Small Local to Large Remote]</div>
+
+```{}
+localSmall <- tibble(crime = c("DUI",
+                              "DRUGS/ALCOHOL VIOLATIONS",
+                              "DISTURBING THE PEACE"))
+
+myJoin <- filteredCrimeData() %>%
+  inner_join(localSmall,
+    by = c("crime_type" = "crime"),
+    copy = TRUE
+  )
+```
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Joining Small Remote to Large Local]</div>
+
+```{}
+output$louisvilleMap <- renderLeaflet({
+    shapesToPlot <- louisville_shapefile %>%
+      left_join(
+        filteredCrimeData() %>%
+          select(zip_code) %>%
+          group_by(zip_code) %>%
+          summarise(crimes = n()) %>%
+          collect(),
+        by = c("ZCTA5CE10" = "zip_code")
+      )
+    pal <- colorNumeric("OrRd",
+                        domain = shapesToPlot$crimes,
+                        reverse = FALSE)
+    leaflet::leaflet(shapesToPlot) %>% 
+      # addTiles() %>% 
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addPolygons(fillOpacity = 0.75,
+                  color = ~pal(crimes), 
+                  weight = 1)
+  })
+```
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Uploading New Data to Database]</div>
+
+```{}
+check_comment <- validateComment(input$commentCrimeType,
+                                 input$commentUserName,
+                                 input$commentText,
+                                 input$readyToSubmit)
+if(check_comment){
+  toSave <- tibble(
+        datetime = Sys.time(),
+        CrimeType = input$commentCrimeType,
+        UserName = input$commentUserName,
+        comment = input$commentText
+      )
+      dbWriteTable(db,'comments',toSave,append = TRUE)
+      showModal(
+        modalDialog(
+          title = "Comment Uploaded",
+          "Your comment has been uploaded. Thanks!",
+          easyClose = TRUE
+        )
+      )
+}
+```
+
+<div class="my-footer"></div>
+
+---
+class: class: left, middle, inverseFooter
+
+<div class="my-header">.myTitle[Polling for New Data]</div>
+
+```{}
+comment_data <- reactivePoll(
+    5000, # Check every 5 seconds
+    session,
+    checkFunc = function(){
+      # if this tally value changes
+      comment_tbl %>% tally() %>% pull()
+    },
+    valueFunc = function(){
+      # Do this if it changed
+      comment_tbl %>% collect()
+    }
+  )
+```
 
 <div class="my-footer"></div>
 
@@ -273,14 +498,28 @@ class: class: left, middle, inverseFooter
 ---
 class: class: left, middle, inverseFooter
 
-<div class="my-header">.myTitle[]</div>
+<div class="my-header">.myTitle[Fin]</div>
+
+.center[.large[Questions???]]
 
 <div class="my-footer"></div>
 
 ---
 class: class: left, middle, inverseFooter
 
-<div class="my-header">.myTitle[]</div>
+<div class="my-header">.myTitle[Additional SQLite Help]</div>
+
+```{}
+sqlite_numeric_to_date <- function(number.in) {
+    as_datetime(as.numeric(number.in),
+               origin = "1970-01-01",
+               tz = "GMT") #SQLite defaults to UCT/GMT
+  }
+  
+date_to_sqlite_numeric <- function(date.in) {
+    as.numeric(date.in)
+  }
+```
 
 <div class="my-footer"></div>
 
